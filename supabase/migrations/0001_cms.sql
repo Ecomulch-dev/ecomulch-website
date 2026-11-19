@@ -16,10 +16,17 @@ create table if not exists public.site_settings (
   updated_at timestamptz not null default now()
 );
 
--- 3. Row Level Security.
--- The website reads with the anon key, so allow public SELECT. All writes go
--- through the server using the service-role key, which bypasses RLS entirely —
--- so we deliberately add NO insert/update policies for anon/authenticated.
+-- 3. Table privileges for the server key. Newer Supabase projects don't grant
+-- these automatically (see 0002_grants.sql); the site only ever reads and
+-- writes on the server with the secret / service_role key.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.pages, public.site_settings to service_role;
+
+-- 4. Row Level Security.
+-- All reads and writes go through the server using the service-role key, which
+-- bypasses RLS. The public SELECT policies below only matter if the content is
+-- ever read with the publishable key; we deliberately add NO insert/update
+-- policies for anon/authenticated.
 alter table public.pages enable row level security;
 alter table public.site_settings enable row level security;
 
@@ -31,7 +38,7 @@ drop policy if exists "settings are publicly readable" on public.site_settings;
 create policy "settings are publicly readable"
   on public.site_settings for select using (true);
 
--- 4. Public storage bucket for uploaded images.
+-- 5. Public storage bucket for uploaded images.
 insert into storage.buckets (id, name, public)
 values ('media', 'media', true)
 on conflict (id) do nothing;

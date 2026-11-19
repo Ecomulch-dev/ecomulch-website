@@ -67,7 +67,9 @@ anywhere and have changes persist.
 2. In the project's **SQL editor**, paste and run
    [`supabase/migrations/0001_cms.sql`](supabase/migrations/0001_cms.sql).
    This creates the `pages` and `site_settings` tables and the public `media`
-   image bucket.
+   image bucket. (If the tables were created with an older copy of that file
+   and the admin reports "permission denied for table … (code 42501)", also
+   run [`supabase/migrations/0002_grants.sql`](supabase/migrations/0002_grants.sql).)
 3. In **Project Settings → API**, copy:
    - the **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
    - the **Secret key** (`sb_secret_…`, under **API Keys**; the legacy
