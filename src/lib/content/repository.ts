@@ -28,11 +28,28 @@ export interface ContentRepository {
 
 let cached: ContentRepository | null = null;
 
+/**
+ * The Supabase client wants the bare project URL (https://<ref>.supabase.co).
+ * Dashboards also show it with an API path such as /rest/v1/, which makes
+ * every request fail with PGRST125 "Invalid path specified in request URL",
+ * so trim any path, query or trailing slash off what was pasted.
+ */
+export function projectUrl(raw: string | undefined): string | undefined {
+  const v = raw?.trim();
+  if (!v) return undefined;
+  try {
+    const u = new URL(v);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return v.replace(/\/(rest|auth|storage)\/v1\/?.*$/, "").replace(/\/+$/, "");
+  }
+}
+
 export function getRepository(): ContentRepository {
   if (cached) return cached;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = projectUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   const repo: ContentRepository =
     url && serviceKey
