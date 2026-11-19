@@ -10,7 +10,7 @@ import {
   Pencil,
   Settings,
 } from "lucide-react";
-import { getSettings, lastEdited, listPages } from "@/lib/content/store";
+import { checkBackend, getSettings, lastEdited, listPages } from "@/lib/content/store";
 import { isLiveBackend } from "@/lib/content/repository";
 import { GROUPS } from "@/lib/content/site-map";
 import { loadArticles } from "@/lib/blog/store";
@@ -27,10 +27,11 @@ function when(iso?: string) {
 export default async function DashboardPage() {
   const pages = listPages();
   const live = isLiveBackend();
-  const [edited, settings, articles] = await Promise.all([
+  const [edited, settings, articles, backend] = await Promise.all([
     lastEdited(pages.map((p) => p.slug)),
     getSettings(),
     loadArticles(),
+    checkBackend(),
   ]);
   const published = articles.filter((a) => a.status === "published").length;
   const drafts = articles.length - published;
@@ -58,6 +59,16 @@ export default async function DashboardPage() {
           Every page on the EcoMulch website can be edited here. Changes go live as soon as you save.
         </p>
       </header>
+
+      {!backend.ok && (
+        <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <strong>The content database can&apos;t be reached, so edits won&apos;t save.</strong> The public
+          site is showing its built-in content in the meantime. Check the Supabase project URL and secret key
+          in the hosting settings, and that <code>supabase/migrations/0001_cms.sql</code> has been run (see{" "}
+          <code>ADMIN_SETUP.md</code>).
+          <span className="mt-2 block font-mono text-xs text-red-800">Error: {backend.message}</span>
+        </div>
+      )}
 
       {!live && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

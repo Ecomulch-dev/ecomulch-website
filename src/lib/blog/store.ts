@@ -4,12 +4,13 @@
  * first saved in the admin, the built-in seed articles are served.
  */
 import { getRepository } from "@/lib/content/repository";
+import { readSafely, type ReadOptions } from "@/lib/content/store";
 import { SEED_ARTICLES, type Article } from "./articles";
 
 const RECORD = "blog-articles";
 
-export async function loadArticles(): Promise<Article[]> {
-  const saved = await getRepository().getPage(RECORD);
+export async function loadArticles(opts?: ReadOptions): Promise<Article[]> {
+  const saved = await readSafely("blog articles", () => getRepository().getPage(RECORD), opts);
   const list = saved?.content?.articles;
   return Array.isArray(list) ? (list as Article[]) : SEED_ARTICLES;
 }

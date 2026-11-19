@@ -7,7 +7,7 @@ import { getTheme, THEMES } from "@/lib/blog/themes";
 export const dynamic = "force-dynamic";
 
 export default async function ArticlesPage() {
-  const all = await loadArticles();
+  const all = await loadArticles({ strict: true });
   const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date));
   const published = all.filter((a) => a.status === "published");
 

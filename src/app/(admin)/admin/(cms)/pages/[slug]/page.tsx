@@ -19,7 +19,7 @@ export default async function EditPage({
   if (meta.kind === "content") {
     const defaults = CONTENT_DEFAULTS[slug];
     if (!defaults) notFound();
-    const content = await getPageContent(slug, defaults);
+    const content = await getPageContent(slug, defaults, { strict: true });
     return (
       <ContentEditor
         slug={slug}
@@ -32,7 +32,7 @@ export default async function EditPage({
     );
   }
 
-  const page = await getPage(slug);
+  const page = await getPage(slug, { strict: true });
   if (!page) notFound();
   return <PageEditor page={{ ...page, title: meta.title, path: meta.path }} />;
 }

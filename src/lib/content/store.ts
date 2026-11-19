@@ -9,8 +9,47 @@ import type { Page, SiteSettings } from "./types";
 import type { SiteMapEntry } from "./site-map";
 import { mergeContent } from "./merge";
 
-export async function getPage(slug: string): Promise<Page | null> {
-  const saved = await getRepository().getPage(slug);
+/**
+ * Public pages must keep working if the database is briefly unreachable or
+ * misconfigured (and a build must not fail because of it): reads fall back to
+ * the built-in content and the error is logged. The admin passes
+ * `strict: true` so it never edits, and then saves over, stale content.
+ */
+export type ReadOptions = { strict?: boolean };
+
+export async function readSafely<T>(what: string, read: () => Promise<T>, opts?: ReadOptions): Promise<T | null> {
+  if (opts?.strict) return read();
+  try {
+    return await read();
+  } catch (err) {
+    console.error(`[content] Could not read ${what} from the database; showing built-in content instead.`, err);
+    return null;
+  }
+}
+
+/** A readable one-line description of a database error, for the admin. */
+export function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as { message?: string; hint?: string; code?: string };
+    return [e.message, e.hint, e.code && `(code ${e.code})`].filter(Boolean).join(" ") || JSON.stringify(err);
+  }
+  return String(err);
+}
+
+/** Is the content database reachable and set up? Shown on the admin dashboard. */
+export async function checkBackend(): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    await getRepository().getSettings();
+    await getRepository().getPage("home");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: describeError(err) };
+  }
+}
+
+export async function getPage(slug: string, opts?: ReadOptions): Promise<Page | null> {
+  const saved = await readSafely(`page "${slug}"`, () => getRepository().getPage(slug), opts);
   if (saved) return saved;
   return SEED_PAGES[slug] ?? null;
 }
@@ -19,8 +58,8 @@ export async function savePage(page: Page): Promise<void> {
   await getRepository().savePage(page);
 }
 
-export async function getSettings(): Promise<SiteSettings> {
-  const saved = await getRepository().getSettings();
+export async function getSettings(opts?: ReadOptions): Promise<SiteSettings> {
+  const saved = await readSafely("site settings", () => getRepository().getSettings(), opts);
   const s = saved ? { ...SEED_SETTINGS, ...saved } : SEED_SETTINGS;
   return { ...s, nav: renamePillars(s.nav) };
 }
@@ -51,8 +90,8 @@ export function listPages(): SiteMapEntry[] {
  * Content for a fixed-layout page: the page's built-in defaults with any
  * edits saved in the admin layered on top.
  */
-export async function getPageContent<T>(slug: string, defaults: T): Promise<T> {
-  const saved = await getRepository().getPage(slug);
+export async function getPageContent<T>(slug: string, defaults: T, opts?: ReadOptions): Promise<T> {
+  const saved = await readSafely(`page "${slug}"`, () => getRepository().getPage(slug), opts);
   return mergeContent(defaults, saved?.content);
 }
 

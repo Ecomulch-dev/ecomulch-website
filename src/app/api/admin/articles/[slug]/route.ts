@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: Ctx) {
     return Response.json({ error: "An article needs at least a title." }, { status: 400 });
   }
 
-  const all = await loadArticles();
+  const all = await loadArticles({ strict: true });
   const others = all.filter((a) => a.slug !== slug);
   if (others.some((a) => a.slug === article.slug)) {
     return Response.json({ error: "Another article already uses this web address." }, { status: 409 });
@@ -64,7 +64,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const denied = await guardApi();
   if (denied) return denied;
   const { slug } = await params;
-  const all = await loadArticles();
+  const all = await loadArticles({ strict: true });
   if (!all.some((a) => a.slug === slug)) {
     return Response.json({ error: "Article not found" }, { status: 404 });
   }
