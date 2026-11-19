@@ -70,7 +70,8 @@ anywhere and have changes persist.
    image bucket.
 3. In **Project Settings → API**, copy:
    - the **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - the **service_role** key (under "Project API keys") → `SUPABASE_SERVICE_ROLE_KEY`
+   - the **Secret key** (`sb_secret_…`, under **API Keys**; the legacy
+     **service_role** key also works) → `SUPABASE_SERVICE_ROLE_KEY`
      (keep this secret — it's server-only and never shipped to the browser).
 4. Set the environment variables (see `.env.example`):
    - locally in `.env.local`
@@ -84,6 +85,16 @@ anywhere and have changes persist.
 5. Redeploy. The admin now reads and writes the Supabase database, and the
    first time a page is opened and saved it is written there (until then the
    built-in seed content shows, so the site is never blank).
+
+---
+
+## Search engines and going live
+
+While the site is a preview it tells search engines not to index it: every
+page carries `noindex`, responses send `X-Robots-Tag: noindex`, and
+`robots.txt` blocks all crawlers. When this project takes over
+**ecomulch.co.ke**, add `ALLOW_INDEXING=true` to the Vercel environment
+variables and redeploy.
 
 ---
 

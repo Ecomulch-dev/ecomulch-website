@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    // Until go-live (ALLOW_INDEXING=true) ask search engines not to index
+    // anything, images included. See src/lib/indexing.ts.
+    if (process.env.ALLOW_INDEXING === "true") return [];
+    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+  },
   async redirects() {
     // November 2026: "Say No to Bare Soil" became a campaign inside the new
     // Organic Soil Cover pillar. Keep old links working.

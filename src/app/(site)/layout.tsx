@@ -4,6 +4,7 @@ import "../globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getSettings, whatsappUrl } from "@/lib/content/store";
+import { allowIndexing } from "@/lib/indexing";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -20,6 +21,8 @@ export const metadata: Metadata = {
   description:
     "EcoMulch is a sustainable urban greening company based in Kiambu, Kenya, building greener, healthier and more resilient towns and cities.",
   metadataBase: new URL("https://ecomulch.co.ke"),
+  // Kept out of search results until go-live (see src/lib/indexing.ts).
+  robots: allowIndexing ? undefined : { index: false, follow: false },
 };
 
 export default async function SiteLayout({
